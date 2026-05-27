@@ -1,5 +1,5 @@
 """
-정성 심사 엔진 — GPT-4o로 업종/사업모델 할랄 여부 판단
+정성 심사 엔진 — Google Gemini로 업종/사업모델 할랄 여부 판단 (무료)
 """
 from dataclasses import dataclass
 from typing import Literal
@@ -36,14 +36,14 @@ AAOIFI(이슬람금융기관회계감사기구) 기준을 적용합니다.
 3. 판단이 불가능한 경우 UNCERTAIN 반환, needs_human_review=true
 
 ## 응답 형식 (JSON만 반환, 마크다운 없이)
-{
+{{
   "sector_compliant": true/false,
   "verdict": "PASS" | "FAIL" | "UNCERTAIN",
   "business_risks": ["위험요소1", "위험요소2"],
   "reasoning": "판단 근거 상세 설명",
   "confidence": 0.0~1.0,
   "needs_human_review": true/false
-}
+}}
 """
 
 
@@ -53,12 +53,16 @@ class QualEngine:
         self._prompt = None
 
     def _get_chain(self):
-        """OpenAI API 키가 설정될 때까지 LLM 초기화를 지연"""
+        """Google API 키로 Gemini 초기화 (지연 로딩)"""
         if self._llm is None:
-            from langchain_openai import ChatOpenAI
+            from langchain_google_genai import ChatGoogleGenerativeAI
             from langchain_core.prompts import ChatPromptTemplate
 
-            self._llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            self._llm = ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",   # 무료 티어 지원 모델
+                temperature=0,
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+            )
             self._prompt = ChatPromptTemplate.from_messages([
                 ("system", SHARIA_SYSTEM_PROMPT),
                 ("human", """
@@ -82,14 +86,14 @@ class QualEngine:
           "products": str  (없으면 "")
         }
         """
-        # OpenAI API 키 없으면 UNCERTAIN 반환
-        if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY", "").startswith("sk-your"):
+        # Google API 키 없으면 UNCERTAIN 반환
+        if not os.getenv("GOOGLE_API_KEY"):
             return QualResult(
                 ticker=ticker,
                 verdict="UNCERTAIN",
                 sector_compliant=False,
-                business_risks=["OPENAI_API_KEY 미설정 — 정성 심사 생략됨"],
-                reasoning="OPENAI_API_KEY가 설정되지 않아 LLM 정성 심사를 수행할 수 없습니다. .env에 실제 키를 입력해주세요.",
+                business_risks=["GOOGLE_API_KEY 미설정 — 정성 심사 생략됨"],
+                reasoning="GOOGLE_API_KEY가 설정되지 않아 Gemini 정성 심사를 수행할 수 없습니다. .env에 키를 입력해주세요.",
                 confidence=0.0,
                 needs_human_review=True,
             )
@@ -103,7 +107,14 @@ class QualEngine:
                 "products": company_info.get("products", ""),
             })
 
-            result = json.loads(response.content)
+            # Gemini가 ```json ... ``` 형태로 감싸는 경우 제거
+            raw = response.content.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```", 2)[1]          # 첫 ``` 제거
+                if raw.startswith("json"):
+                    raw = raw[4:]                      # "json" 태그 제거
+                raw = raw.rsplit("```", 1)[0].strip()  # 닫는 ``` 제거
+            result = json.loads(raw)
 
         except json.JSONDecodeError:
             return QualResult(

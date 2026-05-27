@@ -8,28 +8,24 @@ dependencies = [
     # 데이터 수집
     "yfinance>=0.2.38",
     "pandas>=2.2.0",
-
     # LLM / AI
     "openai>=1.30.0",
     "langchain>=0.2.0",
     "langchain-openai>=0.1.0",
     "langchain-community>=0.2.0",
-
     # 벡터 스토어
     "chromadb>=0.5.0",
-
     # DB
     "psycopg2-binary>=2.9.9",
     "sqlalchemy>=2.0.0",
-
     # MCP 서버 핵심
     "mcp[cli]>=1.0.0",
     "fastmcp>=2.0.0",
-
     # 유틸
     "pydantic>=2.7.0",
     "python-dotenv>=1.0.0",
     "tenacity>=8.3.0",
+    "langchain-google-genai>=4.2.3",
 ]
 
 [project.scripts]

@@ -70,8 +70,8 @@ class DBHandler:
                         (ticker, final_verdict, confidence_score, quant_summary,
                          qual_summary, evidence_text, needs_human_review, screening_standard)
                     VALUES
-                        (:ticker, :final_verdict, :confidence_score, :quant_summary::jsonb,
-                         :qual_summary::jsonb, :evidence_text, :needs_human_review, :screening_standard)
+                        (:ticker, :final_verdict, :confidence_score, CAST(:quant_summary AS jsonb),
+                         CAST(:qual_summary AS jsonb), :evidence_text, :needs_human_review, :screening_standard)
                     RETURNING res_id
                 """),
                 {
