@@ -1,0 +1,35 @@
+# 환경변수 (절대 커밋 금지)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# uv / venv
+.venv/
+.uv/
+
+# ChromaDB 로컬 데이터
+data/chroma_db/
+
+# 원시 데이터 (용량이 크면 제외)
+# data/*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
